@@ -1,6 +1,7 @@
 import SwiftUI
 import ARKit
 import Combine
+import HomeKit
 import RealityKit
 import RealityKitContent
 
@@ -27,7 +28,7 @@ class AppModel {
     private var anchorToAccessoryMap: [UUID: UUID] = [:]
     private let anchorMapKey = "VisionGlow.AnchorToAccessoryMap"
     
-    var orbOpacity: Float = 0.7 {
+    var orbOpacity: Float = 0.0 {
         didSet {
             setOpacity(orbOpacity)
         }
@@ -316,6 +317,57 @@ class AppModel {
         for (_, (sphere, _)) in orbEntities {
             if let modelEntity = sphere as? ModelEntity {
                 modelEntity.model?.materials = [bubbleMaterial(opacity: opacity)]
+            }
+        }
+    }
+
+    // MARK: - Accessory
+    
+    @MainActor
+    func toggleLight(accessoryId: UUID) async {
+        // 1. Find the accessory
+        guard let accessory = homeStore.findAccessoriesById(accessoryId: accessoryId) else {
+            print("Toggle Error: Accessory \(accessoryId) not found.")
+            return
+        }
+        
+        // 2. Find the power characteristic
+        guard let lightService = accessory.services.first(where: { $0.serviceType == HMServiceTypeLightbulb }),
+              let powerChar = lightService.characteristics.first(where: { $0.characteristicType == HMCharacteristicTypePowerState })
+        else {
+            print("Toggle Error: Light service or power characteristic not found for \(accessory.name).")
+            return
+        }
+        
+        // 3. Read the current value
+        // We use withCheckedContinuation to bridge the asynchronous completion handler
+        let currentValue: Bool? = await withCheckedContinuation { continuation in
+            powerChar.readValue { error in
+                if let error = error {
+                    print("Toggle Error: Failed to read power state: \(error.localizedDescription)")
+                    continuation.resume(returning: nil) // Return nil on error
+                } else if let value = powerChar.value as? Bool {
+                    continuation.resume(returning: value) // Return current value
+                } else {
+                    print("Toggle Error: Could not read power state as Bool.")
+                    continuation.resume(returning: nil) // Return nil if value is wrong type
+                }
+            }
+        }
+        
+        // 4. If read was successful, write the new (opposite) value
+        guard let currentBoolValue = currentValue else {
+            print("Toggle Error: Could not determine current power state.")
+            return
+        }
+        
+        let newValue = !currentBoolValue
+        
+        powerChar.writeValue(newValue) { error in
+            if let error = error {
+                print("Toggle Error: Failed to set power state: \(error.localizedDescription)")
+            } else {
+                print("Toggle Success: Set \(accessory.name) power to \(newValue)")
             }
         }
     }

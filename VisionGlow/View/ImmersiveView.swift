@@ -60,6 +60,23 @@ struct ImmersiveView: View {
                 print("Encountered an unexpected error: \(error.localizedDescription)")
             }
         }
+        .gesture(LongPressGesture()
+            .targetedToAnyEntity()
+            .onEnded { value in
+                guard let accessoryComponent = value.entity.components[AccessoryComponent.self],
+                      let accessory = model.homeStore.findAccessoriesById(accessoryId: accessoryComponent.accessoryId)
+                      else { return }
+                
+                guard accessory.services.contains(where: { $0.serviceType == HMServiceTypeLightbulb }) else {
+                    return
+                }
+                
+                print("Long pressed on light: \(accessory.name), toggling power.")
+                Task {
+                    await model.toggleLight(accessoryId: accessory.uniqueIdentifier)
+                }
+            }
+        )
         .gesture(SpatialTapGesture().targetedToAnyEntity().onEnded { value in
             guard let accessoryComponent = value.entity.components[AccessoryComponent.self],
                   let accessory = model.homeStore.findAccessoriesById(accessoryId: accessoryComponent.accessoryId)
