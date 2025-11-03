@@ -7,34 +7,37 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4918AAE02E9F112F006E7D2E /* CameraControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4918AADF2E9F1122006E7D2E /* CameraControlView.swift */; };
+		498AC2D22D65886600DC3DFE /* Floats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498AC2D02D65886600DC3DFE /* Floats.swift */; };
+		49C227E42D65BEBB009A4C19 /* LightBulbControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C227E32D65BEBB009A4C19 /* LightBulbControlView.swift */; };
+		49C228542D67FAAA009A4C19 /* TemperatureSensorControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C228532D67FAAA009A4C19 /* TemperatureSensorControlView.swift */; };
 		49EF94B72D5457C4005D6FC8 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = 49EF94B62D5457C4005D6FC8 /* RealityKitContent */; };
+		49EF94FB2D545B76005D6FC8 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49EF94F32D545B76005D6FC8 /* AppModel.swift */; };
+		49EF94FF2D545B76005D6FC8 /* VisionGlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49EF94F92D545B76005D6FC8 /* VisionGlowApp.swift */; };
+		49EF95002D545B76005D6FC8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49EF94F12D545B76005D6FC8 /* Preview Assets.xcassets */; };
+		49EF95012D545B76005D6FC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49EF94F42D545B76005D6FC8 /* Assets.xcassets */; };
+		49EF95052D5469A9005D6FC8 /* HomeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49EF95042D5469A5005D6FC8 /* HomeStore.swift */; };
+		49EF95152D547387005D6FC8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49EF950F2D547387005D6FC8 /* ContentView.swift */; };
+		49EF95162D547387005D6FC8 /* ImmersiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49EF95102D547387005D6FC8 /* ImmersiveView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4918AADF2E9F1122006E7D2E /* CameraControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraControlView.swift; sourceTree = "<group>"; };
+		498AC2D02D65886600DC3DFE /* Floats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Floats.swift; sourceTree = "<group>"; };
+		49C227E32D65BEBB009A4C19 /* LightBulbControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightBulbControlView.swift; sourceTree = "<group>"; };
+		49C228532D67FAAA009A4C19 /* TemperatureSensorControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureSensorControlView.swift; sourceTree = "<group>"; };
 		49EF94B12D5457C4005D6FC8 /* VisionGlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisionGlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		49EF94B52D5457C4005D6FC8 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
+		49EF94F12D545B76005D6FC8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		49EF94F32D545B76005D6FC8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		49EF94F42D545B76005D6FC8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		49EF94F72D545B76005D6FC8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		49EF94F92D545B76005D6FC8 /* VisionGlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionGlowApp.swift; sourceTree = "<group>"; };
+		49EF95032D545D40005D6FC8 /* VisionGlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisionGlow.entitlements; sourceTree = "<group>"; };
+		49EF95042D5469A5005D6FC8 /* HomeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStore.swift; sourceTree = "<group>"; };
+		49EF950F2D547387005D6FC8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		49EF95102D547387005D6FC8 /* ImmersiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		49EF94C82D5457C5005D6FC8 /* Exceptions for "VisionGlow" folder in "VisionGlow" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 49EF94B02D5457C4005D6FC8 /* VisionGlow */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		49EF94B32D5457C4005D6FC8 /* VisionGlow */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				49EF94C82D5457C5005D6FC8 /* Exceptions for "VisionGlow" folder in "VisionGlow" target */,
-			);
-			path = VisionGlow;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		49EF94AE2D5457C4005D6FC8 /* Frameworks */ = {
@@ -48,10 +51,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		498AC2D12D65886600DC3DFE /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				498AC2D02D65886600DC3DFE /* Floats.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		49EF94A82D5457C4005D6FC8 = {
 			isa = PBXGroup;
 			children = (
-				49EF94B32D5457C4005D6FC8 /* VisionGlow */,
+				49EF94FA2D545B76005D6FC8 /* VisionGlow */,
 				49EF94B42D5457C4005D6FC8 /* Packages */,
 				49EF94B22D5457C4005D6FC8 /* Products */,
 			);
@@ -73,6 +84,42 @@
 			path = Packages;
 			sourceTree = "<group>";
 		};
+		49EF94F22D545B76005D6FC8 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				49EF94F12D545B76005D6FC8 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		49EF94FA2D545B76005D6FC8 /* VisionGlow */ = {
+			isa = PBXGroup;
+			children = (
+				49EF95032D545D40005D6FC8 /* VisionGlow.entitlements */,
+				49EF94F22D545B76005D6FC8 /* Preview Content */,
+				49EF94F92D545B76005D6FC8 /* VisionGlowApp.swift */,
+				49EF94F32D545B76005D6FC8 /* AppModel.swift */,
+				49EF95042D5469A5005D6FC8 /* HomeStore.swift */,
+				49EF95122D547387005D6FC8 /* View */,
+				498AC2D12D65886600DC3DFE /* Extensions */,
+				49EF94F42D545B76005D6FC8 /* Assets.xcassets */,
+				49EF94F72D545B76005D6FC8 /* Info.plist */,
+			);
+			path = VisionGlow;
+			sourceTree = "<group>";
+		};
+		49EF95122D547387005D6FC8 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				49EF950F2D547387005D6FC8 /* ContentView.swift */,
+				49EF95102D547387005D6FC8 /* ImmersiveView.swift */,
+				49C227E32D65BEBB009A4C19 /* LightBulbControlView.swift */,
+				49C228532D67FAAA009A4C19 /* TemperatureSensorControlView.swift */,
+				4918AADF2E9F1122006E7D2E /* CameraControlView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -87,9 +134,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				49EF94B32D5457C4005D6FC8 /* VisionGlow */,
 			);
 			name = VisionGlow;
 			packageProductDependencies = (
@@ -138,6 +182,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49EF95002D545B76005D6FC8 /* Preview Assets.xcassets in Resources */,
+				49EF95012D545B76005D6FC8 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -148,6 +194,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49EF95152D547387005D6FC8 /* ContentView.swift in Sources */,
+				49EF95162D547387005D6FC8 /* ImmersiveView.swift in Sources */,
+				498AC2D22D65886600DC3DFE /* Floats.swift in Sources */,
+				49EF94FB2D545B76005D6FC8 /* AppModel.swift in Sources */,
+				49EF95052D5469A9005D6FC8 /* HomeStore.swift in Sources */,
+				49C228542D67FAAA009A4C19 /* TemperatureSensorControlView.swift in Sources */,
+				49C227E42D65BEBB009A4C19 /* LightBulbControlView.swift in Sources */,
+				49EF94FF2D545B76005D6FC8 /* VisionGlowApp.swift in Sources */,
+				4918AAE02E9F112F006E7D2E /* CameraControlView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +214,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VisionGlow/VisionGlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"VisionGlow/Preview Content\"";
@@ -166,12 +222,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "Configure HomeKit accessories";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = deepsilicon.VisionGlow;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.VisionGlow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -185,6 +242,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VisionGlow/VisionGlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"VisionGlow/Preview Content\"";
@@ -192,12 +250,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "Configure HomeKit accessories";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = deepsilicon.VisionGlow;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.VisionGlow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;

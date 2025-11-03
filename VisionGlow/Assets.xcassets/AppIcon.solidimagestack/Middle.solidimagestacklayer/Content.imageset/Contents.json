@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "visionglow_middle.png",
       "idiom" : "vision",
       "scale" : "2x"
     }
