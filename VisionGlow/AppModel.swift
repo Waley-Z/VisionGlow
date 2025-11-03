@@ -63,7 +63,6 @@ class AppModel {
     
     private func saveAnchorMapping(anchorID: UUID, accessoryID: UUID) {
         anchorToAccessoryMap[anchorID] = accessoryID
-        persistAnchorMap()
     }
     
     private func removeAnchorMapping(anchorID: UUID) {
