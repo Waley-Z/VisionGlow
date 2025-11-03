@@ -28,6 +28,10 @@ class AppModel {
     private var anchorToAccessoryMap: [UUID: UUID] = [:]
     private let anchorMapKey = "VisionGlow.AnchorToAccessoryMap"
     
+    // Persistent mapping of (Accessory ID -> Scale)
+    private var accessoryScaleMap: [UUID: SIMD3<Float>] = [:]
+    private let scaleMapKey = "VisionGlow.AccessoryScaleMap"
+    
     var orbOpacity: Float = 0.0 {
         didSet {
             setOpacity(orbOpacity)
@@ -36,6 +40,7 @@ class AppModel {
     
     init() {
         loadAnchorMap()
+        loadScaleMap()
     }
     
     // MARK: - Persistence (UserDefaults)
@@ -58,6 +63,28 @@ class AppModel {
         } catch {
             print("Failed to decode anchor map: \(error). Resetting map.")
             self.anchorToAccessoryMap = [:]
+        }
+    }
+
+    private func loadScaleMap() {
+        guard let data = UserDefaults.standard.data(forKey: scaleMapKey) else {
+            print("No scale map found in UserDefaults. Starting fresh.")
+            return
+        }
+        
+        do {
+            // Decode as [String: [Float]] since SIMD3<Float> isn't directly Codable
+            let stringMap = try JSONDecoder().decode([String: [Float]].self, from: data)
+            self.accessoryScaleMap = [:]
+            for (key, value) in stringMap {
+                if let keyUUID = UUID(uuidString: key), value.count == 3 {
+                    self.accessoryScaleMap[keyUUID] = SIMD3<Float>(value[0], value[1], value[2])
+                }
+            }
+            print("Loaded scale map with \(accessoryScaleMap.count) items.")
+        } catch {
+            print("Failed to decode scale map: \(error). Resetting map.")
+            self.accessoryScaleMap = [:]
         }
     }
     
@@ -83,6 +110,27 @@ class AppModel {
         }
     }
     
+    func saveOrbScale(accessoryId: UUID, scale: SIMD3<Float>) {
+        accessoryScaleMap[accessoryId] = scale
+        persistScaleMap()
+    }
+    
+    private func persistScaleMap() {
+        do {
+            // Convert SIMD3<Float> to [Float] for encoding
+            let stringMap = Dictionary(uniqueKeysWithValues:
+                accessoryScaleMap.map { (key, value) in
+                    (key.uuidString, [value.x, value.y, value.z])
+                }
+            )
+            let data = try JSONEncoder().encode(stringMap)
+            UserDefaults.standard.set(data, forKey: scaleMapKey)
+            print("Saved scale map to UserDefaults.")
+        } catch {
+            print("Failed to encode and save scale map: \(error)")
+        }
+    }
+    
     // MARK: - RealityKit Content
     
     func setupContentEntity() -> Entity {
@@ -97,6 +145,11 @@ class AppModel {
         
         entity.name = "Orb_\(accessoryId)"
         entity.generateCollisionShapes(recursive: true)
+        
+        if let savedScale = accessoryScaleMap[accessoryId] {
+            entity.scale = savedScale
+            print("Restored scale for \(accessoryId): \(savedScale)")
+        }
 
         /// InputTargetComponent
         entity.components.set(InputTargetComponent())
@@ -269,8 +322,21 @@ class AppModel {
 
         print("Orb for \(accessoryId) finished dragging. Re-anchoring...")
 
-        // Get the orb's new world transform
-        let newWorldTransform = entity.transformMatrix(relativeTo: nil)
+        // Get the orb's scale, position, and rotation separately
+        let currentScale = entity.scale(relativeTo: nil)
+        let currentPosition = entity.position(relativeTo: nil)
+        let currentRotation = entity.orientation(relativeTo: nil)
+
+        // 1. Save the scale to your new map (in case it was a drag-scale gesture)
+        //    This is redundant if scaleEndedPublisher also fired, but it's safe.
+        saveOrbScale(accessoryId: accessoryId, scale: currentScale)
+
+        // 2. Create a new transform matrix *without* scale for the anchor
+        let newWorldTransform = Transform(
+            scale: .one, // <-- ALWAYS .one
+            rotation: currentRotation,
+            translation: currentPosition
+        ).matrix
 
         // Create the new ARKit anchor
         let newARKitAnchor = WorldAnchor(originFromAnchorTransform: newWorldTransform)
@@ -295,6 +361,7 @@ class AppModel {
             // 6. Reset the orb's local position to (0,0,0)
             //    since it's now relative to the updated anchor
             entity.position = .zero
+            entity.orientation = Transform.identity.rotation
 
             print("✅ Re-anchored orb to new position.")
 

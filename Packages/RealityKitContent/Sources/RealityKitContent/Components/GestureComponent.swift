@@ -56,6 +56,9 @@ public class EntityGestureState {
         
     /// Publishes the entity that just finished being dragged.
     public let dragEndedPublisher = PassthroughSubject<Entity, Never>()
+
+    /// Publishes the entity and its final scale when scaling ends
+    public let scaleEndedPublisher = PassthroughSubject<Entity, Never>()
 }
 
 // MARK: - GestureComponent
@@ -166,6 +169,7 @@ public struct GestureComponent: Component, Codable {
     private func handleScaleEnded(value: EntityTargetValue<MagnifyGesture.Value>) {
         let state = EntityGestureState.shared
         state.isScaling = false
+        state.scaleEndedPublisher.send(value.entity)
     }
     
     // MARK: - Rotate Logic

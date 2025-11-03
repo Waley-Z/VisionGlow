@@ -38,10 +38,22 @@ struct ImmersiveView: View {
             print("World sensing authorization granted.")
             model.debugSceneHierarchy()
 
+            // Listen for drag end events
             Task {
                 for await entity in EntityGestureState.shared.dragEndedPublisher.values {
                     print("Drag ended on entity: \(entity.name)")
                     await model.handleOrbDragEnd(for: entity)
+                }
+            }
+
+            // Listen for scale end events
+            Task {
+                for await entity in EntityGestureState.shared.scaleEndedPublisher.values {
+                    print("Scale ended on entity: \(entity.name)")
+                    if let accessoryComponent = entity.components[AccessoryComponent.self] {
+                        let currentScale = entity.scale(relativeTo: nil)
+                        model.saveOrbScale(accessoryId: accessoryComponent.accessoryId, scale: currentScale)
+                    }
                 }
             }
 
