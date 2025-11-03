@@ -15,6 +15,8 @@ struct LightBulbControlView: View {
     let accessoryId: UUID
     @Environment(AppModel.self) var appModel
     
+    // MARK: - Accessory & Service Properties
+    
     private var accessory: HMAccessory {
         appModel.homeStore.findAccessoriesById(accessoryId: accessoryId)!
     }
@@ -22,6 +24,8 @@ struct LightBulbControlView: View {
     private var lightService: HMService? {
         accessory.services.first { $0.serviceType == HMServiceTypeLightbulb }
     }
+    
+    // MARK: - Characteristic Properties
     
     private var powerStateCharacteristic: HMCharacteristic? {
         lightService?.characteristics.first { $0.characteristicType == HMCharacteristicTypePowerState }
@@ -35,24 +39,37 @@ struct LightBulbControlView: View {
         lightService?.characteristics.first { $0.characteristicType == HMCharacteristicTypeHue }
     }
     
-    private var saturationCharacteristic: HMCharacteristic? {
-        lightService?.characteristics.first { $0.characteristicType == HMCharacteristicTypeSaturation }
+    private var colorTemperatureCharacteristic: HMCharacteristic? {
+        lightService?.characteristics.first { $0.characteristicType == HMCharacteristicTypeColorTemperature }
     }
+    
+    // MARK: - State Variables
     
     @State private var isOn: Bool = false
     @State private var brightness: Double = 50
     @State private var hue: Double = 0
-    @State private var saturation: Double = 50
+    
+    // --- Temperature State ---
+    @State private var miredValue: Double = 300
+    @State private var miredMin: Double = 153
+    @State private var miredMax: Double = 500
+
+    @State private var kelvinValue: Double = 3300
+
+    // MARK: - Combine Publishers & Cancellables
     
     @State private var brightnessWriteCancellable: AnyCancellable?
     @State private var hueWriteCancellable: AnyCancellable?
-    @State private var satWriteCancellable: AnyCancellable?
+    @State private var tempWriteCancellable: AnyCancellable?
+    
     private let brightnessSubject = PassthroughSubject<Double, Never>()
     private let hueSubject = PassthroughSubject<Double, Never>()
-    private let saturationSubject = PassthroughSubject<Double, Never>()
+    private let miredSubject = PassthroughSubject<Double, Never>()
+    
+    // MARK: - Body View
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Text(accessory.name)
                 .font(.title)
             
@@ -62,9 +79,10 @@ struct LightBulbControlView: View {
                     setPowerState(newValue)
                 }
             
+            // --- Brightness ---
             if brightnessCharacteristic != nil {
-                VStack {
-                    Text("Brightness: \(Int(brightness))")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Brightness: \(Int(brightness))%")
                     Slider(value: $brightness, in: 0...100, step: 1)
                         .onChange(of: brightness) { _, newValue in
                             brightnessSubject.send(newValue)
@@ -72,105 +90,139 @@ struct LightBulbControlView: View {
                 }
             }
             
+            // --- Hue (Color) ---
             if hueCharacteristic != nil {
-                VStack {
-                    Text("Hue: \(Int(hue))")
-                    Slider(value: $hue, in: 0...360, step: 1)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Color")
+                    HueGradientSlider(hue: $hue)
+                        .frame(height: 28)
                         .onChange(of: hue) { _, newValue in
                             hueSubject.send(newValue)
                         }
                 }
             }
             
-            if saturationCharacteristic != nil {
-                VStack {
-                    Text("Saturation: \(Int(saturation))")
-                    Slider(value: $saturation, in: 0...100, step: 1)
-                        .onChange(of: saturation) { _, newValue in
-                            saturationSubject.send(newValue)
-                        }
+            // --- Color Temperature (in Kelvin) ---
+            if colorTemperatureCharacteristic != nil {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Temperature: \(Int(kelvinValue)) K")
+                    
+                    TemperatureGradientSlider(
+                        kelvin: $kelvinValue,
+                        kelvinMin: (1_000_000 / miredMax),
+                        kelvinMax: (1_000_000 / miredMin)
+                    )
+                    .frame(height: 28)
+                    .onChange(of: kelvinValue) { _, newKelvin in
+                        let newMired = 1_000_000 / newKelvin
+                        self.miredValue = newMired
+                        miredSubject.send(newMired)
+                    }
                 }
             }
         }
         .padding()
         .onAppear {
-            if let characteristic = powerStateCharacteristic {
-                characteristic.readValue { error in
-                    if let error = error {
-                        print("Error reading power state: \(error.localizedDescription)")
-                    } else if let value = characteristic.value as? Bool {
-                        DispatchQueue.main.async {
-                            self.isOn = value
-                        }
-                    }
-                }
-            } else {
-                print("Power characteristic not found.")
-            }
-            
-            if let characteristic = brightnessCharacteristic {
-                characteristic.readValue { error in
-                    if let error = error {
-                        print("Error reading brightness: \(error.localizedDescription)")
-                    } else if let value = characteristic.value as? NSNumber {
-                        DispatchQueue.main.async {
-                            self.brightness = value.doubleValue
-                        }
-                    }
-                }
-            }
-            
-            if brightnessWriteCancellable == nil {
-                brightnessWriteCancellable = brightnessSubject
-                    .removeDuplicates(by: { abs($0 - $1) < 1 }) // ignore +/-1 changes
-                    .throttle(for: .milliseconds(120), scheduler: RunLoop.main, latest: true)
-                    .sink { value in setBrightness(value) }
-            }
-            
-            if let characteristic = hueCharacteristic {
-                characteristic.readValue { error in
-                    if let error = error {
-                        print("Error reading hue: \(error.localizedDescription)")
-                    } else if let value = characteristic.value as? NSNumber {
-                        DispatchQueue.main.async {
-                            self.hue = value.doubleValue
-                        }
-                    }
-                }
-            }
-            
-            if hueWriteCancellable == nil {
-                hueWriteCancellable = hueSubject
-                    .removeDuplicates(by: { abs($0 - $1) < 2 })           // ignore +/-2°
-                    .throttle(for: .milliseconds(120), scheduler: RunLoop.main, latest: true)
-                    .sink { value in setHue(value) }
-            }
-            
-            if let characteristic = saturationCharacteristic {
-                characteristic.readValue { error in
-                    if let error = error {
-                        print("Error reading saturation: \(error.localizedDescription)")
-                    } else if let value = characteristic.value as? NSNumber {
-                        DispatchQueue.main.async {
-                            self.saturation = value.doubleValue
-                        }
-                    }
-                }
-            }
-            
-            if satWriteCancellable == nil {
-                satWriteCancellable = saturationSubject
-                    .removeDuplicates(by: { abs($0 - $1) < 1 })           // ignore +/-1
-                    .throttle(for: .milliseconds(120), scheduler: RunLoop.main, latest: true)
-                    .sink { value in setSaturation(value) }
-            }
+            readInitialValues()
+            setupCancellables()
         }
         .onDisappear {
             brightnessWriteCancellable?.cancel(); brightnessWriteCancellable = nil
             hueWriteCancellable?.cancel();        hueWriteCancellable = nil
-            satWriteCancellable?.cancel();        satWriteCancellable = nil
+            tempWriteCancellable?.cancel();       tempWriteCancellable = nil
         }
     }
+    
+    // MARK: - Helper Methods
+    
+    private func readInitialValues() {
+        // Read Power
+        if let characteristic = powerStateCharacteristic {
+            characteristic.readValue { error in
+                if let error = error {
+                    print("Error reading power state: \(error.localizedDescription)")
+                } else if let value = characteristic.value as? Bool {
+                    DispatchQueue.main.async {
+                        self.isOn = value
+                    }
+                }
+            }
+        }
+        
+        // Read Brightness
+        if let characteristic = brightnessCharacteristic {
+            characteristic.readValue { error in
+                if let error = error {
+                    print("Error reading brightness: \(error.localizedDescription)")
+                } else if let value = characteristic.value as? NSNumber {
+                    DispatchQueue.main.async {
+                        self.brightness = value.doubleValue
+                    }
+                }
+            }
+        }
+        
+        // Read Hue
+        if let characteristic = hueCharacteristic {
+            characteristic.readValue { error in
+                if let error = error {
+                    print("Error reading hue: \(error.localizedDescription)")
+                } else if let value = characteristic.value as? NSNumber {
+                    DispatchQueue.main.async {
+                        self.hue = value.doubleValue
+                    }
+                }
+            }
+        }
+        
+        // Read Color Temperature (Mireds)
+        if let characteristic = colorTemperatureCharacteristic {
+            if let min = characteristic.metadata?.minimumValue as? Double,
+               let max = characteristic.metadata?.maximumValue as? Double {
+                self.miredMin = min
+                self.miredMax = max
+            }
+            
+            characteristic.readValue { error in
+                if let error = error {
+                    print("Error reading color temperature: \(error.localizedDescription)")
+                } else if let value = characteristic.value as? NSNumber {
+                    let mired = value.doubleValue
+                    DispatchQueue.main.async {
+                        self.miredValue = mired
+                        self.kelvinValue = 1_000_000 / mired
+                    }
+                }
+            }
+        }
+    }
+    
+    private func setupCancellables() {
+        if brightnessWriteCancellable == nil {
+            brightnessWriteCancellable = brightnessSubject
+                .removeDuplicates(by: { abs($0 - $1) < 5 })
+                .throttle(for: .milliseconds(200), scheduler: RunLoop.main, latest: true)
+                .sink { value in setBrightness(value) }
+        }
+        
+        if hueWriteCancellable == nil {
+            hueWriteCancellable = hueSubject
+                .removeDuplicates(by: { abs($0 - $1) < 20 })
+                .throttle(for: .milliseconds(200), scheduler: RunLoop.main, latest: true)
+                .sink { value in setHue(value) }
+        }
+        
+        if tempWriteCancellable == nil {
+            tempWriteCancellable = miredSubject
+                .removeDuplicates(by: { abs($0 - $1) < 50 })
+                .throttle(for: .milliseconds(200), scheduler: RunLoop.main, latest: true)
+                .sink { miredValue in
+                    setColorTemperature(miredValue)
+                }
+        }
+    }
+    
+    // MARK: - HomeKit Write Functions
     
     private func setPowerState(_ on: Bool) {
         guard let characteristic = powerStateCharacteristic else {
@@ -201,7 +253,7 @@ struct LightBulbControlView: View {
             }
         }
     }
-    
+
     private func setHue(_ newValue: Double) {
         guard let characteristic = hueCharacteristic else {
             print("Hue characteristic not found.")
@@ -217,18 +269,74 @@ struct LightBulbControlView: View {
         }
     }
     
-    private func setSaturation(_ newValue: Double) {
-        guard let characteristic = saturationCharacteristic else {
-            print("Saturation characteristic not found.")
+    private func setColorTemperature(_ newMiredValue: Double) {
+        guard let characteristic = colorTemperatureCharacteristic else {
+            print("Color Temperature characteristic not found.")
             return
         }
         
-        characteristic.writeValue(NSNumber(value: newValue)) { error in
+        characteristic.writeValue(NSNumber(value: newMiredValue)) { error in
             if let error = error {
-                print("Error setting saturation: \(error.localizedDescription)")
+                print("Error setting color temperature: \(error.localizedDescription)")
             } else {
-                print("Saturation successfully set to \(newValue)")
+                print("Color Temperature successfully set to \(newMiredValue) Mireds")
             }
         }
+    }
+}
+
+// MARK: - HueGradientSlider
+
+private struct HueGradientSlider: View {
+    @Binding var hue: Double
+    
+    private let hueGradient = LinearGradient(
+        gradient: Gradient(colors: [
+            Color(hue: 0.0, saturation: 1, brightness: 1),
+            Color(hue: 1/6, saturation: 1, brightness: 1),
+            Color(hue: 2/6, saturation: 1, brightness: 1),
+            Color(hue: 3/6, saturation: 1, brightness: 1),
+            Color(hue: 4/6, saturation: 1, brightness: 1),
+            Color(hue: 5/6, saturation: 1, brightness: 1),
+            Color(hue: 1.0, saturation: 1, brightness: 1)
+        ]),
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+    
+    var body: some View {
+        Slider(value: $hue, in: 0...360, step: 1)
+            .background(
+                hueGradient
+                    .clipShape(Capsule())
+            )
+    }
+}
+
+// MARK: - TemperatureGradientSlider
+
+private struct TemperatureGradientSlider: View {
+    @Binding var kelvin: Double
+    let kelvinMin: Double
+    let kelvinMax: Double
+    
+    private var tempGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 1.0, green: 0.9, blue: 0.6),  // Warm
+                Color(red: 1.0, green: 1.0, blue: 1.0), // Neutral
+                Color(red: 0.8, green: 0.9, blue: 1.0)  // Cool
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+    
+    var body: some View {
+        Slider(value: $kelvin, in: kelvinMin...kelvinMax, step: 1)
+            .background(
+                tempGradient
+                    .clipShape(Capsule())
+            )
     }
 }
