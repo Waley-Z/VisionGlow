@@ -55,6 +55,8 @@ struct LightBulbControlView: View {
     @State private var miredMax: Double = 500
 
     @State private var kelvinValue: Double = 3300
+    
+    @State private var isInitializing: Bool = true
 
     // MARK: - Combine Publishers & Cancellables
     
@@ -76,6 +78,7 @@ struct LightBulbControlView: View {
             Toggle("Power", isOn: $isOn)
                 .toggleStyle(.switch)
                 .onChange(of: isOn) { _, newValue in
+                    guard !isInitializing else { return }
                     setPowerState(newValue)
                 }
             
@@ -85,6 +88,7 @@ struct LightBulbControlView: View {
                     Text("Brightness: \(Int(brightness))%")
                     Slider(value: $brightness, in: 0...100, step: 1)
                         .onChange(of: brightness) { _, newValue in
+                            guard !isInitializing else { return }
                             brightnessSubject.send(newValue)
                         }
                 }
@@ -97,6 +101,7 @@ struct LightBulbControlView: View {
                     HueGradientSlider(hue: $hue)
                         .frame(height: 28)
                         .onChange(of: hue) { _, newValue in
+                            guard !isInitializing else { return }
                             hueSubject.send(newValue)
                         }
                 }
@@ -114,6 +119,7 @@ struct LightBulbControlView: View {
                     )
                     .frame(height: 28)
                     .onChange(of: kelvinValue) { _, newKelvin in
+                        guard !isInitializing else { return }
                         let newMired = 1_000_000 / newKelvin
                         self.miredValue = newMired
                         miredSubject.send(newMired)
@@ -122,9 +128,15 @@ struct LightBulbControlView: View {
             }
         }
         .padding()
-        .onAppear {
-            readInitialValues()
+        .task {
+            // Setup cancellables before any state changes
             setupCancellables()
+            // Load initial state
+            await loadAccessoryState()
+            // Only now allow onChange to trigger writes
+            // Use a small delay to ensure all pending onChange calls have been processed
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+            isInitializing = false
         }
         .onDisappear {
             brightnessWriteCancellable?.cancel(); brightnessWriteCancellable = nil
@@ -135,68 +147,96 @@ struct LightBulbControlView: View {
     
     // MARK: - Helper Methods
     
-    private func readInitialValues() {
-        // Read Power
-        if let characteristic = powerStateCharacteristic {
-            characteristic.readValue { error in
-                if let error = error {
-                    print("Error reading power state: \(error.localizedDescription)")
-                } else if let value = characteristic.value as? Bool {
-                    DispatchQueue.main.async {
-                        self.isOn = value
+    private func loadAccessoryState() async {
+        print("--- Reading initial accessory states... ---")
+        
+        await withTaskGroup(of: Void.self) { group in
+            if let char = powerStateCharacteristic {
+                group.addTask {
+                    await withCheckedContinuation { continuation in
+                        char.readValue { error in
+                            if let error = error {
+                                print("Error reading power: \(error.localizedDescription)")
+                            } else if let value = char.value as? Bool {
+                                Task { @MainActor in
+                                    self.isOn = value
+                                    print("Read Power: \(value)")
+                                }
+                            }
+                            continuation.resume()
+                        }
                     }
                 }
-            }
-        }
-        
-        // Read Brightness
-        if let characteristic = brightnessCharacteristic {
-            characteristic.readValue { error in
-                if let error = error {
-                    print("Error reading brightness: \(error.localizedDescription)")
-                } else if let value = characteristic.value as? NSNumber {
-                    DispatchQueue.main.async {
-                        self.brightness = value.doubleValue
-                    }
-                }
-            }
-        }
-        
-        // Read Hue
-        if let characteristic = hueCharacteristic {
-            characteristic.readValue { error in
-                if let error = error {
-                    print("Error reading hue: \(error.localizedDescription)")
-                } else if let value = characteristic.value as? NSNumber {
-                    DispatchQueue.main.async {
-                        self.hue = value.doubleValue
-                    }
-                }
-            }
-        }
-        
-        // Read Color Temperature (Mireds)
-        if let characteristic = colorTemperatureCharacteristic {
-            if let min = characteristic.metadata?.minimumValue as? Double,
-               let max = characteristic.metadata?.maximumValue as? Double {
-                self.miredMin = min
-                self.miredMax = max
             }
             
-            characteristic.readValue { error in
-                if let error = error {
-                    print("Error reading color temperature: \(error.localizedDescription)")
-                } else if let value = characteristic.value as? NSNumber {
-                    let mired = value.doubleValue
-                    DispatchQueue.main.async {
-                        self.miredValue = mired
-                        self.kelvinValue = 1_000_000 / mired
+            if let char = brightnessCharacteristic {
+                group.addTask {
+                    await withCheckedContinuation { continuation in
+                        char.readValue { error in
+                            if let error = error {
+                                print("Error reading brightness: \(error.localizedDescription)")
+                            } else if let value = char.value as? NSNumber {
+                                Task { @MainActor in
+                                    self.brightness = value.doubleValue
+                                    print("Read Brightness: \(self.brightness)")
+                                }
+                            }
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            
+            if let char = hueCharacteristic {
+                group.addTask {
+                    await withCheckedContinuation { continuation in
+                        char.readValue { error in
+                            if let error = error {
+                                print("Error reading hue: \(error.localizedDescription)")
+                            } else if let value = char.value as? NSNumber {
+                                Task { @MainActor in
+                                    self.hue = value.doubleValue
+                                    print("Read Hue: \(self.hue)")
+                                }
+                            }
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            
+            if let char = colorTemperatureCharacteristic {
+                // Metadata is sync, read it on main actor
+                await MainActor.run {
+                    if let min = char.metadata?.minimumValue as? Double,
+                       let max = char.metadata?.maximumValue as? Double {
+                        self.miredMin = min
+                        self.miredMax = max
+                    }
+                }
+                
+                group.addTask {
+                    await withCheckedContinuation { continuation in
+                        char.readValue { error in
+                            if let error = error {
+                                print("Error reading temp: \(error.localizedDescription)")
+                            } else if let value = char.value as? NSNumber {
+                                Task { @MainActor in
+                                    self.miredValue = value.doubleValue
+                                    self.kelvinValue = 1_000_000 / self.miredValue
+                                    print("Read Mired: \(self.miredValue) (Calculated Kelvin: \(self.kelvinValue))")
+                                }
+                            }
+                            continuation.resume()
+                        }
                     }
                 }
             }
         }
+        
+        print("--- Finished reading states. ---")
     }
-    
+
     private func setupCancellables() {
         if brightnessWriteCancellable == nil {
             brightnessWriteCancellable = brightnessSubject
