@@ -32,6 +32,8 @@ class AppModel {
     private var accessoryScaleMap: [UUID: SIMD3<Float>] = [:]
     private let scaleMapKey = "VisionGlow.AccessoryScaleMap"
     
+    private var gestureListenTask: Task<Void, Never>? = nil
+    
     var orbOpacity: Float = 0.0 {
         didSet {
             setOpacity(orbOpacity)
@@ -41,6 +43,38 @@ class AppModel {
     init() {
         loadAnchorMap()
         loadScaleMap()
+        listenForGestureEvents()
+    }
+    
+    private func listenForGestureEvents() {
+        // Ensure we only ever have one listener task
+        guard gestureListenTask == nil else {
+            print("Gesture listeners already running.")
+            return
+        }
+        
+        print("Starting gesture listeners...")
+        
+        gestureListenTask = Task { @MainActor in
+            // Listen for drag end events
+            Task {
+                for await entity in EntityGestureState.shared.dragEndedPublisher.values {
+                    print("Drag ended on entity: \(entity.name)")
+                    await self.handleOrbDragEnd(for: entity)
+                }
+            }
+
+            // Listen for scale end events
+            Task {
+                for await entity in EntityGestureState.shared.scaleEndedPublisher.values {
+                    print("Scale ended on entity: \(entity.name)")
+                    if let accessoryComponent = entity.components[AccessoryComponent.self] {
+                        let currentScale = entity.scale(relativeTo: nil)
+                        self.saveOrbScale(accessoryId: accessoryComponent.accessoryId, scale: currentScale)
+                    }
+                }
+            }
+        }
     }
     
     // MARK: - Persistence (UserDefaults)
