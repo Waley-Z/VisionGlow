@@ -23,7 +23,11 @@ struct TemperatureSensorControlView: View {
             .characteristics.first { $0.characteristicType == HMCharacteristicTypeCurrentTemperature }
     }
     
-    @State private var currentTemperature: Double = 0.0
+    @State private var currentTemperatureC: Double = 0.0
+    
+    private var currentTemperatureF: Double {
+        currentTemperatureC * 9.0/5.0 + 32.0
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -32,9 +36,9 @@ struct TemperatureSensorControlView: View {
             
             if let _ = temperatureCharacteristic {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("\(currentTemperature, specifier: "%.1f")")
+                    Text("\(currentTemperatureF, specifier: "%.0f")")
                         .font(.system(size: 64, weight: .bold))
-                    Text("°C")
+                    Text("°F")
                         .font(.system(size: 24, weight: .regular))
                 }
             } else {
@@ -49,7 +53,7 @@ struct TemperatureSensorControlView: View {
                         print("Error reading temperature: \(error.localizedDescription)")
                     } else if let value = characteristic.value as? NSNumber {
                         DispatchQueue.main.async {
-                            self.currentTemperature = value.doubleValue
+                            self.currentTemperatureC = value.doubleValue
                         }
                     }
                 }
