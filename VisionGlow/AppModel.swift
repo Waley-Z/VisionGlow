@@ -34,6 +34,11 @@ class AppModel {
     
     private var gestureListenTask: Task<Void, Never>? = nil
     
+    var openControlPanels = Set<UUID>()
+    func markPanelOpened(_ id: UUID) { openControlPanels.insert(id) }
+    func markPanelClosed(_ id: UUID) { openControlPanels.remove(id) }
+    func isPanelOpen(_ id: UUID) -> Bool { openControlPanels.contains(id) }
+    
     var orbOpacity: Float = 0.0 {
         didSet {
             setOpacity(orbOpacity)

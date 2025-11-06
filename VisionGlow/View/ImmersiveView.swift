@@ -42,6 +42,7 @@ struct ImmersiveView: View {
             do {
                 // Attempt to start an ARKit session with the world-tracking provider.
                 try await model.session.run([model.worldTracking])
+                print("--- ✅ ARKitSession RUNNING ---")
                 for await update in model.worldTracking.anchorUpdates {
                     await model.handleAnchorUpdate(update)
                 }
@@ -75,8 +76,18 @@ struct ImmersiveView: View {
                   let accessory = model.homeStore.findAccessoriesById(accessoryId: accessoryComponent.accessoryId)
                   else { return }
             
-            print("Tapped on accessory with ID: \(accessoryComponent.accessoryId), name: \(accessory.name), type: \(accessory.category.categoryType)")
-            openWindow(id: "controlPanel", value: accessoryComponent.accessoryId)
+            let accessoryId = accessoryComponent.accessoryId
+            print("Tapped on accessory with ID: \(accessoryId), name: \(accessory.name), type: \(accessory.category.categoryType)")
+            
+            guard !model.isPanelOpen(accessoryId) else {
+                print("Control panel for accessory \(accessory.name) is already open.")
+                return
+            }
+            
+            model.markPanelOpened(accessoryId)
+            print("Opening control panel for accessory: \(accessory.name)")
+            openWindow(id: "controlPanel", value: accessoryId)
+            print("Opened panels: \(model.openControlPanels)")
         })
     }
 }

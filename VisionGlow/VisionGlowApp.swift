@@ -63,6 +63,10 @@ struct ControlPanelWindow: Scene {
                 }
             }
             .padding(24)
+            .onDisappear() {
+                print("Control Panel window for accessory \(String(describing: id)) closed.")
+                if let id { appModel.markPanelClosed(id) }
+            }
         }
         .defaultSize(CGSize(width: 400, height: 400))
         .windowResizability(.contentSize)
